@@ -16,6 +16,7 @@
 #    under the License.
 
 import argparse
+import getpass
 
 from keystoneclient.v2_0 import client
 from keystoneclient import utils
@@ -106,6 +107,32 @@ def do_user_update(kc, args):
 def do_user_password_update(kc, args):
     """Update user password"""
     kc.users.update_password(args.id, args.passwd)
+
+
+@utils.arg('--orig-pass', metavar='<orig-password>', dest='origpasswd',
+           required=False, help='Original password')
+@utils.arg('--pass', metavar='<password>', dest='passwd', required=False,
+           help='Desired new password')
+def do_password_update(kc, args):
+    """Update own password"""
+
+    # we are prompting for these passwords if they are not passed in
+    # this gives users the option not to have their password
+    # appear in bash history etc..
+    origpasswd = args.origpasswd
+    if origpasswd is None:
+        origpasswd = getpass.getpass('Enter your original password : ')
+
+    passwd = args.passwd
+    if passwd is None:
+        while True:
+            passwd1 = getpass.getpass('Enter your new password    : ')
+            passwd2 = getpass.getpass('Re-enter your new password : ')
+            if passwd1 == passwd2:
+                passwd = passwd1
+                break
+
+    kc.users.update_own_password(origpasswd, passwd)
 
 
 @utils.arg('id', metavar='<user-id>', help='User ID to delete')
